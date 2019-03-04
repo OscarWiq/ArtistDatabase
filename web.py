@@ -1,35 +1,54 @@
-import json
 import requests
+import time
+
+param_artist = "artist"
+param_artists = "artists"
+param_name = "name"
+param_id = "id"
+
+base_url = "https://5hyqtreww2.execute-api.eu-north-1.amazonaws.com"
+
+cached_artists = []
+cache_duration = 20  # cache lifetime in seconds
+time_of_cache = -1  # time when cache was last updated
 
 
-#Fetches the JSON object for "artists" or "artist" depending on artist_id flag.
-# if artist_id flag is false, get the "artists" JSON object, otherwise get the
-# "artist" object.
-def fetch_artists(artist_id = False):
-    url = 'https://5hyqtreww2.execute-api.eu-north-1.amazonaws.com/artists/'
-    if artist_id != False:
-        return requests.get(url + artist_id).json()["artist"]
+def fetch_artists():
+    global time_of_cache, cache_duration, cached_artists
+    url = base_url + '/artists/'
+    if len(cached_artists) != 0 and time.time() - time_of_cache < cache_duration:
+        return cached_artists
     else:
-        return requests.get(url).json()["artists"]
+        api_artists = requests.get(url).json()[param_artists]
+        cached_artists.clear()
+        for artist in api_artists:
+            cached_artists.append(artist)
+        time_of_cache = time.time()
+        return cached_artists
 
-#Creates a list of artist names.
+
+def fetch_artist(artist_id=-1):
+    url = base_url + '/artists/'
+    if artist_id != -1:
+        return requests.get(url + str(artist_id)).json()[param_artist]
+    else:
+        return ""
+
+
 def get_all_artists():
-    list = []
-    for artist in fetch_artists():
-        list.append(artist["name"])
-    return list
+    artist_list = []
+    artists = fetch_artists()
+    for artist in artists:
+        artist_list.append(artist[param_name])
+    return artist_list
 
-#Looks for an ID in the "artists" JSON object, based on the name of the artist.
-# if the ID is found, request additional artist information from the API,
-# otherwise return error values if artist name wasn't found.
+
 def linear_view_artist(name):
     artist_id = 0
-    for artist in fetch_artists(): 
-       if artist["name"].lower() == name.lower():
-            artist_id = artist["id"]
+    artists = fetch_artists()
+    for artist in artists:
+        if artist[param_name].lower() == name.lower():
+            artist_id = artist[param_id]
     if artist_id == 0:
         return 0
-    return fetch_artists(artist_id)
-
-
-
+    return fetch_artist(artist_id)
