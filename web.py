@@ -9,7 +9,7 @@ param_id = "id"
 base_url = "https://5hyqtreww2.execute-api.eu-north-1.amazonaws.com"
 
 cached_artists = []
-cache_duration = 20  # cache lifetime in seconds
+cache_duration = 60  # cache lifetime in seconds
 time_of_cache = -1  # time when cache was last updated
 
 
